@@ -16,6 +16,7 @@ func Key(m map[string]float64) (keys []string) {
 
 func req(stack map[string]string, values map[string]float64, lastIndex string) float64 {
 	var expressionReplace = stack[lastIndex]
+	//fmt.Println(lastIndex)
 	for _, value := range "+-/*" {
 		expressionReplace = strings.Replace(expressionReplace, string(value), "$"+string(value)+"$", -1)
 	}
@@ -52,72 +53,194 @@ func req(stack map[string]string, values map[string]float64, lastIndex string) f
 	}
 }
 
-func C(expression string) (float64, error) {
+func Calc(expression string) (float64, error) {
 	var stack = map[string]string{}
 	var n = 1
 	//var isPriority = false
 	var newStr = expression
-	for _, operation := range "+-/*" {
+	for _, operation := range "+-/*()" {
 		newStr = strings.Replace(newStr, string(operation), "@"+string(operation)+"@", -1)
+		newStr = strings.Replace(newStr, "@@", "@", -1)
 	}
 	var newStrArray = strings.Split(newStr, "@")
-	fmt.Println(newStrArray)
-	for {
-		var indexArr []int
-		for key, value := range newStrArray {
-			if value == "*" || value == "/" {
-				indexArr = append(indexArr, key)
-			}
-		}
-		var newInd = ""
-		var newArr []string
-		for key, value := range newStrArray {
-			if slices.Contains(indexArr, key) {
-				newInd = "@" + strconv.Itoa(n)
-				newArr = append(newArr, newInd)
-				stack[newInd] = newStrArray[key-1] + value + newStrArray[key+1]
-				newStrArray = append(newArr, newStrArray[key+2:]...)
-				newArr = []string{}
-				n += 1
-				break
-			} else if slices.Contains(indexArr, key-1) || slices.Contains(indexArr, key+1) {
-
-			} else {
-				newArr = append(newArr, value)
-			}
-		}
-		if !slices.Contains(newStrArray, "/") && !slices.Contains(newStrArray, "*") {
-			break
+	var clearSpace []string
+	for _, value := range newStrArray {
+		if value != "" {
+			clearSpace = append(clearSpace, value)
 		}
 	}
-	// --------------
+	newStrArray = clearSpace
+	clearSpace = []string{}
+	fmt.Println(newStrArray)
 	for {
-		var indexArr []int
-		for key, value := range newStrArray {
-			if value == "-" || value == "+" {
-				indexArr = append(indexArr, key)
+		fmt.Println(newStrArray)
+		for {
+			var maxSkob, currentSkob = 0, 0
+			for _, value := range newStrArray {
+				if value == "(" {
+					currentSkob += 1
+				} else if value == ")" {
+					currentSkob -= 1
+				}
+				maxSkob = max(maxSkob, currentSkob)
 			}
-		}
-		var newInd = ""
-		var newArr []string
-		for key, value := range newStrArray {
-			if slices.Contains(indexArr, key) {
-				newInd = "@" + strconv.Itoa(n)
-				newArr = append(newArr, newInd)
-				stack[newInd] = newStrArray[key-1] + value + newStrArray[key+1]
-				newStrArray = append(newArr, newStrArray[key+2:]...)
-				newArr = []string{}
-				n += 1
+			for _, value := range newStrArray {
+				if value != "" {
+					clearSpace = append(clearSpace, value)
+				}
+			}
+			newStrArray = clearSpace
+			clearSpace = []string{}
+			var indexArr []int
+			var skobArr []int
+			for key, value := range newStrArray {
+				if value == "*" || value == "/" {
+					indexArr = append(indexArr, key)
+				} else if value == "(" || value == ")" {
+					skobArr = append(skobArr, key)
+				}
+			}
+			var newInd = ""
+			var newArr []string
+			var newStrArray2 []string
+			clearSpace = []string{}
+			currentSkob = 0
+			for key, value := range newStrArray {
+				if slices.Contains(indexArr, key) && !strings.Contains("()", newStrArray[key-1]) && !strings.Contains("()", newStrArray[key+1]) && currentSkob == maxSkob {
+					newInd = "@" + strconv.Itoa(n)
+					newArr = append(newArr, newInd)
+					stack[newInd] = newStrArray[key-1] + value + newStrArray[key+1]
+					newStrArray2 = append(newArr, newStrArray[key+2:]...)
+					n += 1
+					break
+				} else if slices.Contains(indexArr, key+1) && !strings.Contains("()", value) && currentSkob == maxSkob {
+				} else {
+					if value == "(" {
+						currentSkob += 1
+					} else if value == ")" {
+						currentSkob -= 1
+					}
+					newArr = append(newArr, value)
+				}
+			}
+			//fmt.Println("start", newStrArray2, len(newStrArray2))
+			// TODO: ((3)) не работает из-за того, что замена идёт у newStrArr2, он пустой, а вся строка в newArr
+			newStrArrayR := strings.Join(newStrArray2, "#")
+			fmt.Println(newStrArrayR)
+			for key := range stack {
+				newStrArrayR = strings.Replace(newStrArrayR, "(#"+key+"#)", "#"+key+"#", -1)
+				newStrArrayR = strings.Replace(newStrArrayR, "##", "#", -1)
+			}
+			fmt.Println(newStrArrayR)
+			newStrArray2 = strings.Split(newStrArrayR, "#")
+			fmt.Println(newStrArray, newStrArray2, newArr, len(newStrArray2))
+			if len(newStrArray2) == 1 && newStrArray2[0] == "" {
+				newStrArray = newArr
 				break
-			} else if slices.Contains(indexArr, key-1) || slices.Contains(indexArr, key+1) {
-
-			} else {
-				newArr = append(newArr, value)
+			}
+			newStrArray = newStrArray2
+			//fmt.Println(newStrArray, newStrArray2)
+			//if len(newStrArray2) == 0 && len(newArr) != 0 {
+			//	newStrArray = newArr
+			//	break
+			//}
+			//newStrArray = newStrArray2
+			//if slices.Equal(newStrArray, newStrArray2) && len(newStrArray) == 1 {
+			//	fmt.Println(newStrArray, newStrArray2, newArr)
+			//	newStrArray = newArr
+			//	break
+			//}
+		}
+		//break
+		// --------------
+		var maxSkob, currentSkob = 0, 0
+		for _, value := range newStrArray {
+			if value == "(" {
+				currentSkob += 1
+			} else if value == ")" {
+				currentSkob -= 1
+			}
+			maxSkob = max(maxSkob, currentSkob)
+		}
+		for {
+			clearSpace = []string{}
+			for _, value := range newStrArray {
+				if value != "" {
+					clearSpace = append(clearSpace, value)
+				}
+			}
+			newStrArray = clearSpace
+			clearSpace = []string{}
+			var indexArr []int
+			var skobArr []int
+			for key, value := range newStrArray {
+				if value == "-" || value == "+" {
+					indexArr = append(indexArr, key)
+				} else if value == "(" || value == ")" {
+					skobArr = append(skobArr, key)
+				}
+			}
+			var newInd = ""
+			var newArr []string
+			var newStrArray2 []string
+			currentSkob = 0
+			for key, value := range newStrArray {
+				if slices.Contains(indexArr, key) && !strings.Contains("()", newStrArray[key-1]) && !strings.Contains("()", newStrArray[key+1]) && currentSkob == maxSkob {
+					newInd = "@" + strconv.Itoa(n)
+					newArr = append(newArr, newInd)
+					stack[newInd] = newStrArray[key-1] + value + newStrArray[key+1]
+					newStrArray2 = append(newArr, newStrArray[key+2:]...)
+					newArr = []string{}
+					n += 1
+					break
+				} else if slices.Contains(indexArr, key+1) && !strings.Contains("()", value) && currentSkob == maxSkob {
+				} else {
+					if value == "(" {
+						currentSkob += 1
+					} else if value == ")" {
+						currentSkob -= 1
+					}
+					newArr = append(newArr, value)
+				}
+			}
+			//fmt.Println("start", newStrArray2, len(newStrArray2))
+			newStrArrayR := strings.Join(newStrArray2, "#")
+			fmt.Println(newStrArrayR)
+			for key := range stack {
+				newStrArrayR = strings.Replace(newStrArrayR, "(#"+key+"#)", "#"+key+"#", -1)
+				newStrArrayR = strings.Replace(newStrArrayR, "##", "#", -1)
+			}
+			fmt.Println(newStrArrayR)
+			newStrArray2 = strings.Split(newStrArrayR, "#")
+			//fmt.Println("end", newStrArray2, len(newStrArray2))
+			if len(newStrArray2) == 1 && newStrArray2[0] == "" {
+				newStrArray = newArr
+				break
+			}
+			newStrArray = newStrArray2
+			//if len(newStrArray2) == 0 && len(newArr) != 0 {
+			//	newStrArray = newArr
+			//	break
+			//}
+			//newStrArray = newStrArray2
+			//if slices.Equal(newStrArray, newStrArray2) && len(newStrArray) == 1 {
+			//	newStrArray = newArr
+			//	break
+			//}
+		}
+		clearSpace = []string{}
+		for _, value := range newStrArray {
+			if value != "" {
+				clearSpace = append(clearSpace, value)
 			}
 		}
-		if !slices.Contains(newStrArray, "-") && !slices.Contains(newStrArray, "+") {
+		newStrArray = clearSpace
+		clearSpace = []string{}
+		if len(newStrArray) == 1 {
 			break
 		}
+		//break
+		fmt.Println("Stack:", stack)
 	}
 	fmt.Println(newStrArray)
 	fmt.Println(stack)
@@ -126,5 +249,6 @@ func C(expression string) (float64, error) {
 }
 
 func main() {
-	fmt.Println(C("2+3"))
+	fmt.Println(Calc("(3+(2+3)*1+(2+2))/1+(4-3)"))
+	fmt.Println(Calc("(3+1)*3"))
 }
