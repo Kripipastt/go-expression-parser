@@ -1,254 +1,236 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	maps2 "golang.org/x/exp/maps"
 	"slices"
 	"strconv"
 	"strings"
 )
 
-func Key(m map[string]float64) (keys []string) {
-	for k := range m {
-		keys = append(keys, k)
+var (
+	uncorrectedParenthesis = errors.New("uncorrected parenthesis. The parenthesis are not closed or their order is broken")
+	unknownOperator        = errors.New("unknown mathematical operator")
+	divideByZero           = errors.New("divide by zero")
+	unallowedChar          = errors.New("unallowed character. Check the expression")
+	severalOperations      = errors.New("several operations in a row")
+)
+
+const (
+	ALLOWEDCHAR       = "0123456789+-*/()"
+	OPERATIONS        = "+-/*"
+	EXTENDEDOPERATION = "+-/*()"
+)
+
+func deleteSpecificElement[T comparable](array []T, deletedElement T) []T {
+	var newArray []T
+	for _, el := range array {
+		if el != deletedElement {
+			newArray = append(newArray, el)
+		}
 	}
-	return keys
+	return newArray
 }
 
-func req(stack map[string]string, values map[string]float64, lastIndex string) float64 {
+func findIndexesOfElements[T comparable](array []T, needsElements []T) []int {
+	var indexes []int
+	for i, el := range array {
+		if slices.Contains(needsElements, el) {
+			indexes = append(indexes, i)
+		}
+	}
+	return indexes
+}
+
+func RecursiveStackCounting(stack map[string]string, countedValues map[string]float64, lastIndex string) (float64, error) {
 	var expressionReplace = stack[lastIndex]
-	//fmt.Println(lastIndex)
-	for _, value := range "+-/*" {
+	for _, value := range OPERATIONS {
 		expressionReplace = strings.Replace(expressionReplace, string(value), "$"+string(value)+"$", -1)
 	}
 	var expressionSplit = strings.Split(expressionReplace, "$")
-	var ind1, ind2 = expressionSplit[0], expressionSplit[2]
-	var val1, val2 float64
-	if strings.Contains(ind1, "@") {
-		if !slices.Contains(Key(values), ind1) {
-			values[ind1] = req(stack, values, ind1)
-		}
-		val1 = values[ind1]
-	} else {
-		val1, _ = strconv.ParseFloat(ind1, 64)
+
+	if len(expressionSplit) != 3 {
+		return 0, unknownOperator
 	}
-	if strings.Contains(ind2, "@") {
-		if !slices.Contains(Key(values), ind2) {
-			values[ind2] = req(stack, values, ind2)
+
+	var indexes = [2]string{expressionSplit[0], expressionSplit[2]}
+	var values = [2]float64{}
+	var err error = nil
+	for i, index := range indexes {
+		if strings.Contains(index, "@") {
+			if !slices.Contains(maps2.Keys(countedValues), index) {
+				countedValues[index], err = RecursiveStackCounting(stack, countedValues, index)
+			}
+			values[i] = countedValues[index]
+		} else {
+			values[i], _ = strconv.ParseFloat(index, 64)
 		}
-		val2 = values[ind2]
-	} else {
-		val2, _ = strconv.ParseFloat(ind2, 64)
 	}
 	switch expressionSplit[1] {
 	case "+":
-		return val1 + val2
+		return values[0] + values[1], err
 	case "-":
-		return val1 - val2
+		return values[0] - values[1], err
 	case "*":
-		return val1 * val2
+		return values[0] * values[1], err
 	case "/":
-		return val1 / val2
+
+		if values[1] == 0 {
+			return 0, divideByZero
+		}
+		return values[0] / values[1], err
 	default:
-		panic("error")
+		return 0, unknownOperator
 	}
+}
+
+func checkCorrectExpression(expression string) error {
+	var previousElementIsOperation = false
+	for _, el := range expression {
+		if !strings.Contains(ALLOWEDCHAR, string(el)) {
+			return unallowedChar
+		}
+		if strings.Contains(OPERATIONS, string(el)) {
+			if previousElementIsOperation {
+				return severalOperations
+			}
+			previousElementIsOperation = true
+		} else {
+			previousElementIsOperation = false
+		}
+	}
+	return nil
+}
+
+func splitStringIntoTokens(str, tokens string) []string {
+	for _, operation := range tokens {
+		str = strings.Replace(str, string(operation), "#"+string(operation)+"#", -1)
+		str = strings.Replace(str, "##", "#", -1)
+	}
+	return strings.Split(str, "#")
 }
 
 func Calc(expression string) (float64, error) {
+	expression = strings.Join(deleteSpecificElement(strings.Split(expression, ""), " "), "")
+	err := checkCorrectExpression(expression)
+	if err != nil {
+		return 0, err
+	}
+
 	var stack = map[string]string{}
-	var n = 1
-	//var isPriority = false
-	var newStr = expression
-	for _, operation := range "+-/*()" {
-		newStr = strings.Replace(newStr, string(operation), "@"+string(operation)+"@", -1)
-		newStr = strings.Replace(newStr, "@@", "@", -1)
-	}
-	var newStrArray = strings.Split(newStr, "@")
-	var clearSpace []string
-	for _, value := range newStrArray {
-		if value != "" {
-			clearSpace = append(clearSpace, value)
-		}
-	}
-	newStrArray = clearSpace
-	clearSpace = []string{}
-	fmt.Println(newStrArray)
+	var tokens = deleteSpecificElement(splitStringIntoTokens(expression, EXTENDEDOPERATION), "")
+	//fmt.Println(tokens)
 	for {
-		fmt.Println(newStrArray)
-		for {
-			var maxSkob, currentSkob = 0, 0
-			for _, value := range newStrArray {
-				if value == "(" {
-					currentSkob += 1
-				} else if value == ")" {
-					currentSkob -= 1
-				}
-				maxSkob = max(maxSkob, currentSkob)
-			}
-			for _, value := range newStrArray {
-				if value != "" {
-					clearSpace = append(clearSpace, value)
-				}
-			}
-			newStrArray = clearSpace
-			clearSpace = []string{}
-			var indexArr []int
-			var skobArr []int
-			for key, value := range newStrArray {
-				if value == "*" || value == "/" {
-					indexArr = append(indexArr, key)
-				} else if value == "(" || value == ")" {
-					skobArr = append(skobArr, key)
-				}
-			}
-			var newInd = ""
-			var newArr []string
-			var newStrArray2 []string
-			clearSpace = []string{}
-			currentSkob = 0
-			for key, value := range newStrArray {
-				if slices.Contains(indexArr, key) && !strings.Contains("()", newStrArray[key-1]) && !strings.Contains("()", newStrArray[key+1]) && currentSkob == maxSkob {
-					newInd = "@" + strconv.Itoa(n)
-					newArr = append(newArr, newInd)
-					stack[newInd] = newStrArray[key-1] + value + newStrArray[key+1]
-					newStrArray2 = append(newArr, newStrArray[key+2:]...)
-					n += 1
-					break
-				} else if slices.Contains(indexArr, key+1) && !strings.Contains("()", value) && currentSkob == maxSkob {
-				} else {
-					if value == "(" {
-						currentSkob += 1
-					} else if value == ")" {
-						currentSkob -= 1
+		//fmt.Println(tokens)
+		for _, operations := range [][]string{{"*", "/"}, {"+", "-"}} {
+			for {
+				var maxParenthesis, currentParenthesis = 0, 0
+				for _, token := range tokens {
+					if token == "(" {
+						currentParenthesis += 1
+					} else if token == ")" {
+						currentParenthesis -= 1
 					}
-					newArr = append(newArr, value)
-				}
-			}
-			//fmt.Println("start", newStrArray2, len(newStrArray2))
-			// TODO: ((3)) не работает из-за того, что замена идёт у newStrArr2, он пустой, а вся строка в newArr
-			newStrArrayR := strings.Join(newStrArray2, "#")
-			fmt.Println(newStrArrayR)
-			for key := range stack {
-				newStrArrayR = strings.Replace(newStrArrayR, "(#"+key+"#)", "#"+key+"#", -1)
-				newStrArrayR = strings.Replace(newStrArrayR, "##", "#", -1)
-			}
-			fmt.Println(newStrArrayR)
-			newStrArray2 = strings.Split(newStrArrayR, "#")
-			fmt.Println(newStrArray, newStrArray2, newArr, len(newStrArray2))
-			if len(newStrArray2) == 1 && newStrArray2[0] == "" {
-				newStrArray = newArr
-				break
-			}
-			newStrArray = newStrArray2
-			//fmt.Println(newStrArray, newStrArray2)
-			//if len(newStrArray2) == 0 && len(newArr) != 0 {
-			//	newStrArray = newArr
-			//	break
-			//}
-			//newStrArray = newStrArray2
-			//if slices.Equal(newStrArray, newStrArray2) && len(newStrArray) == 1 {
-			//	fmt.Println(newStrArray, newStrArray2, newArr)
-			//	newStrArray = newArr
-			//	break
-			//}
-		}
-		//break
-		// --------------
-		var maxSkob, currentSkob = 0, 0
-		for _, value := range newStrArray {
-			if value == "(" {
-				currentSkob += 1
-			} else if value == ")" {
-				currentSkob -= 1
-			}
-			maxSkob = max(maxSkob, currentSkob)
-		}
-		for {
-			clearSpace = []string{}
-			for _, value := range newStrArray {
-				if value != "" {
-					clearSpace = append(clearSpace, value)
-				}
-			}
-			newStrArray = clearSpace
-			clearSpace = []string{}
-			var indexArr []int
-			var skobArr []int
-			for key, value := range newStrArray {
-				if value == "-" || value == "+" {
-					indexArr = append(indexArr, key)
-				} else if value == "(" || value == ")" {
-					skobArr = append(skobArr, key)
-				}
-			}
-			var newInd = ""
-			var newArr []string
-			var newStrArray2 []string
-			currentSkob = 0
-			for key, value := range newStrArray {
-				if slices.Contains(indexArr, key) && !strings.Contains("()", newStrArray[key-1]) && !strings.Contains("()", newStrArray[key+1]) && currentSkob == maxSkob {
-					newInd = "@" + strconv.Itoa(n)
-					newArr = append(newArr, newInd)
-					stack[newInd] = newStrArray[key-1] + value + newStrArray[key+1]
-					newStrArray2 = append(newArr, newStrArray[key+2:]...)
-					newArr = []string{}
-					n += 1
-					break
-				} else if slices.Contains(indexArr, key+1) && !strings.Contains("()", value) && currentSkob == maxSkob {
-				} else {
-					if value == "(" {
-						currentSkob += 1
-					} else if value == ")" {
-						currentSkob -= 1
+					if currentParenthesis < 0 {
+						return 0, uncorrectedParenthesis
 					}
-					newArr = append(newArr, value)
+					maxParenthesis = max(maxParenthesis, currentParenthesis)
+				}
+				if currentParenthesis != 0 {
+					return 0, uncorrectedParenthesis
+				}
+				tokens = deleteSpecificElement(tokens, "")
+				var indexesOperations = findIndexesOfElements(tokens, operations)
+				var unusedTokens []string
+				var unfilteredTokens []string
+				currentParenthesis = 0
+				for key, value := range tokens {
+					if slices.Contains(indexesOperations, key) && !strings.Contains("()", tokens[key-1]) && !strings.Contains("()", tokens[key+1]) && currentParenthesis == maxParenthesis {
+						var newInd = "@" + strconv.Itoa(len(stack))
+						unusedTokens = append(unusedTokens, newInd)
+						stack[newInd] = tokens[key-1] + value + tokens[key+1]
+						unfilteredTokens = append(unusedTokens, tokens[key+2:]...)
+						break
+					} else if !(slices.Contains(indexesOperations, key+1) && !strings.Contains("()", value) && currentParenthesis == maxParenthesis) {
+
+						if value == "(" {
+							currentParenthesis += 1
+						} else if value == ")" {
+							currentParenthesis -= 1
+						}
+						unusedTokens = append(unusedTokens, value)
+					}
+				}
+
+				var stringOfTokens = strings.Join(unfilteredTokens, "")
+				if len(unfilteredTokens) == 0 {
+					stringOfTokens = strings.Join(unusedTokens, "")
+				}
+
+				var formattedString = stringOfTokens
+				for {
+					var parenthesisIndexes []int
+					for i, el := range stringOfTokens {
+						if string(el) == "(" {
+							parenthesisIndexes = append(parenthesisIndexes, i)
+						} else if string(el) == ")" {
+							var stringSlice = stringOfTokens[parenthesisIndexes[len(parenthesisIndexes)-1] : i+1]
+							parenthesisIndexes = parenthesisIndexes[:len(parenthesisIndexes)-1]
+							if len(findIndexesOfElements(strings.Split(stringSlice, ""), strings.Split(OPERATIONS, ""))) == 0 {
+								formattedString = strings.Replace(stringOfTokens, stringSlice, stringSlice[1:len(stringSlice)-1], 1)
+								break
+							}
+						}
+					}
+					if formattedString == stringOfTokens {
+						break
+					}
+					stringOfTokens = formattedString
+				}
+				var filteredTokens = deleteSpecificElement(splitStringIntoTokens(stringOfTokens, EXTENDEDOPERATION), "")
+
+				if len(tokens) == len(filteredTokens) {
+					break
+				}
+				tokens = filteredTokens
+				if !slices.Equal(filteredTokens, unfilteredTokens) && slices.Equal(operations, []string{"+", "-"}) {
+					break
 				}
 			}
-			//fmt.Println("start", newStrArray2, len(newStrArray2))
-			newStrArrayR := strings.Join(newStrArray2, "#")
-			fmt.Println(newStrArrayR)
-			for key := range stack {
-				newStrArrayR = strings.Replace(newStrArrayR, "(#"+key+"#)", "#"+key+"#", -1)
-				newStrArrayR = strings.Replace(newStrArrayR, "##", "#", -1)
-			}
-			fmt.Println(newStrArrayR)
-			newStrArray2 = strings.Split(newStrArrayR, "#")
-			//fmt.Println("end", newStrArray2, len(newStrArray2))
-			if len(newStrArray2) == 1 && newStrArray2[0] == "" {
-				newStrArray = newArr
-				break
-			}
-			newStrArray = newStrArray2
-			//if len(newStrArray2) == 0 && len(newArr) != 0 {
-			//	newStrArray = newArr
-			//	break
-			//}
-			//newStrArray = newStrArray2
-			//if slices.Equal(newStrArray, newStrArray2) && len(newStrArray) == 1 {
-			//	newStrArray = newArr
-			//	break
-			//}
 		}
-		clearSpace = []string{}
-		for _, value := range newStrArray {
-			if value != "" {
-				clearSpace = append(clearSpace, value)
-			}
-		}
-		newStrArray = clearSpace
-		clearSpace = []string{}
-		if len(newStrArray) == 1 {
+		tokens = deleteSpecificElement(tokens, "")
+		if len(tokens) == 1 {
 			break
 		}
-		//break
-		fmt.Println("Stack:", stack)
+		//fmt.Println("Stack:", stack)
 	}
-	fmt.Println(newStrArray)
-	fmt.Println(stack)
-	result := req(stack, map[string]float64{}, newStrArray[0])
-	return result, nil
+	//fmt.Println(tokens)
+	//fmt.Println(stack)
+	result, err := RecursiveStackCounting(stack, map[string]float64{}, tokens[0])
+	return result, err
 }
 
 func main() {
-	fmt.Println(Calc("(3+(2+3)*1+(2+2))/1+(4-3)"))
-	fmt.Println(Calc("(3+1)*3"))
+	answer, err := Calc("(3+(2+3)*1+(2+2))/1+(4-3)")
+	fmt.Println(answer, 13, err)
+	answer, err = Calc("(3+1)*3")
+	fmt.Println(answer, 12, err)
+	answer, err = Calc("3   +(2      + 1 )")
+	fmt.Println(answer, 6, err)
+	answer, err = Calc("((3*10)-2*2)/2")
+	fmt.Println(answer, 13, err)
+	answer, err = Calc("(4-2)/(10*0)")
+	fmt.Println(answer, 0, err)
+	answer, err = Calc("(4+3")
+	fmt.Println(answer, 0, err)
+	answer, err = Calc("4+3-4x+2/1")
+	fmt.Println(answer, 0, err)
+	answer, err = Calc("4+3-4x+2/1")
+	fmt.Println(answer, 0, err)
+	answer, err = Calc("(((4))+3)")
+	fmt.Println(answer, 7, err)
+	a, err := RecursiveStackCounting(map[string]string{"@1": "1(0"}, map[string]float64{}, "@1")
+	fmt.Println(a, err)
+
 }
