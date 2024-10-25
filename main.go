@@ -10,11 +10,13 @@ import (
 )
 
 var (
-	uncorrectedParenthesis = errors.New("uncorrected parenthesis. The parenthesis are not closed or their order is broken")
-	unknownOperator        = errors.New("unknown mathematical operator")
-	divideByZero           = errors.New("divide by zero")
-	unallowedChar          = errors.New("unallowed character. Check the expression")
-	severalOperations      = errors.New("several operations in a row")
+	incorrectParenthesis = errors.New("incorrect parenthesis. The parenthesis are not closed or their order is broken")
+	unknownOperator      = errors.New("unknown mathematical operator")
+	divideByZero         = errors.New("divide by zero")
+	unallowableChar      = errors.New("unallowable character. Check the expression")
+	severalOperations    = errors.New("several operations in a row")
+	emptyExpression      = errors.New("empty expression")
+	incorrectExpression  = errors.New("incorrect expression")
 )
 
 const (
@@ -86,10 +88,16 @@ func RecursiveStackCounting(stack map[string]string, countedValues map[string]fl
 }
 
 func checkCorrectExpression(expression string) error {
+	if len(expression) == 0 {
+		return emptyExpression
+	}
+	if strings.Contains(OPERATIONS, string(expression[0])) || strings.Contains(OPERATIONS, string(expression[len(expression)-1])) {
+		return incorrectExpression
+	}
 	var previousElementIsOperation = false
 	for _, el := range expression {
 		if !strings.Contains(ALLOWEDCHAR, string(el)) {
-			return unallowedChar
+			return unallowableChar
 		}
 		if strings.Contains(OPERATIONS, string(el)) {
 			if previousElementIsOperation {
@@ -133,12 +141,12 @@ func Calc(expression string) (float64, error) {
 						currentParenthesis -= 1
 					}
 					if currentParenthesis < 0 {
-						return 0, uncorrectedParenthesis
+						return 0, incorrectParenthesis
 					}
 					maxParenthesis = max(maxParenthesis, currentParenthesis)
 				}
 				if currentParenthesis != 0 {
-					return 0, uncorrectedParenthesis
+					return 0, incorrectParenthesis
 				}
 				tokens = deleteSpecificElement(tokens, "")
 				var indexesOperations = findIndexesOfElements(tokens, operations)
@@ -230,6 +238,10 @@ func main() {
 	fmt.Println(answer, 0, err)
 	answer, err = Calc("(((4))+3)")
 	fmt.Println(answer, 7, err)
+	answer, err = Calc("")
+	fmt.Println(answer, 0, err)
+	answer, err = Calc("*2+3")
+	fmt.Println(answer, 0, err)
 	a, err := RecursiveStackCounting(map[string]string{"@1": "1(0"}, map[string]float64{}, "@1")
 	fmt.Println(a, err)
 
