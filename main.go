@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	maps2 "golang.org/x/exp/maps"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -20,9 +21,9 @@ var (
 )
 
 const (
-	ALLOWEDCHAR       = "0123456789+-*/()"
-	OPERATIONS        = "+-/*"
-	EXTENDEDOPERATION = "+-/*()"
+	ALLOWEDCHAR       = "0123456789+-*/^()"
+	OPERATIONS        = "+-/*^"
+	EXTENDEDOPERATION = "+-/*^()"
 )
 
 func deleteSpecificElement[T comparable](array []T, deletedElement T) []T {
@@ -82,6 +83,8 @@ func RecursiveStackCounting(stack map[string]string, countedValues map[string]fl
 			return 0, divideByZero
 		}
 		return values[0] / values[1], err
+	case "^":
+		return math.Pow(values[0], values[1]), err
 	default:
 		return 0, unknownOperator
 	}
@@ -131,7 +134,7 @@ func Calc(expression string) (float64, error) {
 	//fmt.Println(tokens)
 	for {
 		//fmt.Println(tokens)
-		for _, operations := range [][]string{{"*", "/"}, {"+", "-"}} {
+		for _, operations := range [][]string{{"^"}, {"*", "/"}, {"+", "-"}} {
 			for {
 				var maxParenthesis, currentParenthesis = 0, 0
 				for _, token := range tokens {
@@ -220,29 +223,10 @@ func Calc(expression string) (float64, error) {
 }
 
 func main() {
-	answer, err := Calc("(3+(2+3)*1+(2+2))/1+(4-3)")
-	fmt.Println(answer, 13, err)
-	answer, err = Calc("(3+1)*3")
-	fmt.Println(answer, 12, err)
-	answer, err = Calc("3   +(2      + 1 )")
-	fmt.Println(answer, 6, err)
-	answer, err = Calc("((3*10)-2*2)/2")
-	fmt.Println(answer, 13, err)
-	answer, err = Calc("(4-2)/(10*0)")
-	fmt.Println(answer, 0, err)
-	answer, err = Calc("(4+3")
-	fmt.Println(answer, 0, err)
-	answer, err = Calc("4+3-4x+2/1")
-	fmt.Println(answer, 0, err)
-	answer, err = Calc("4+3-4x+2/1")
-	fmt.Println(answer, 0, err)
-	answer, err = Calc("(((4))+3)")
-	fmt.Println(answer, 7, err)
-	answer, err = Calc("")
-	fmt.Println(answer, 0, err)
-	answer, err = Calc("*2+3")
-	fmt.Println(answer, 0, err)
-	a, err := RecursiveStackCounting(map[string]string{"@1": "1(0"}, map[string]float64{}, "@1")
-	fmt.Println(a, err)
-
+	var expression string
+	_, err := fmt.Scanln(&expression)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	fmt.Println(Calc(expression))
 }
