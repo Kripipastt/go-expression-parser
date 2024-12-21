@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"errors"
@@ -22,7 +22,8 @@ func TestCalc(t *testing.T) {
 		{"Many parenthesis", "(((4))+3)", 7, nil},
 		{"Empty expression", "", 0, emptyExpression},
 		{"Incorrect expression", "*2+3", 0, incorrectExpression},
-		{"Check pow work", "(2 +2)^2", 16, nil}}
+		{"Check pow", "(2 +2)^2", 16, nil}}
+
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			result, err := Calc(testCase.expression)

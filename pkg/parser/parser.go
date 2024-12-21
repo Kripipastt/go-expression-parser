@@ -1,23 +1,11 @@
-package main
+package parser
 
 import (
-	"errors"
-	"fmt"
 	maps2 "golang.org/x/exp/maps"
 	"math"
 	"slices"
 	"strconv"
 	"strings"
-)
-
-var (
-	incorrectParenthesis = errors.New("incorrect parenthesis. The parenthesis are not closed or their order is broken")
-	unknownOperator      = errors.New("unknown mathematical operator")
-	divideByZero         = errors.New("divide by zero")
-	unallowableChar      = errors.New("unallowable character. Check the expression")
-	severalOperations    = errors.New("several operations in a row")
-	emptyExpression      = errors.New("empty expression")
-	incorrectExpression  = errors.New("incorrect expression")
 )
 
 const (
@@ -46,7 +34,7 @@ func findIndexesOfElements[T comparable](array []T, needsElements []T) []int {
 	return indexes
 }
 
-func RecursiveStackCounting(stack map[string]string, countedValues map[string]float64, lastIndex string) (float64, error) {
+func recursiveStackCounting(stack map[string]string, countedValues map[string]float64, lastIndex string) (float64, error) {
 	var expressionReplace = stack[lastIndex]
 	for _, value := range OPERATIONS {
 		expressionReplace = strings.Replace(expressionReplace, string(value), "$"+string(value)+"$", -1)
@@ -63,7 +51,7 @@ func RecursiveStackCounting(stack map[string]string, countedValues map[string]fl
 	for i, index := range indexes {
 		if strings.Contains(index, "@") {
 			if !slices.Contains(maps2.Keys(countedValues), index) {
-				countedValues[index], err = RecursiveStackCounting(stack, countedValues, index)
+				countedValues[index], err = recursiveStackCounting(stack, countedValues, index)
 			}
 			values[i] = countedValues[index]
 		} else {
@@ -218,15 +206,15 @@ func Calc(expression string) (float64, error) {
 	}
 	//fmt.Println(tokens)
 	//fmt.Println(stack)
-	result, err := RecursiveStackCounting(stack, map[string]float64{}, tokens[0])
+	result, err := recursiveStackCounting(stack, map[string]float64{}, tokens[0])
 	return result, err
 }
 
-func main() {
-	var expression string
-	_, err := fmt.Scanln(&expression)
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-	fmt.Println(Calc(expression))
-}
+//func main() {
+//	var expression string
+//	_, err := fmt.Scanln(&expression)
+//	if err != nil {
+//		fmt.Println("Error:", err)
+//	}
+//	fmt.Println(Calc(expression))
+//}
