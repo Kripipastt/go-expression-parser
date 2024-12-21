@@ -209,12 +209,3 @@ func Calc(expression string) (float64, error) {
 	result, err := recursiveStackCounting(stack, map[string]float64{}, tokens[0])
 	return result, err
 }
-
-//func main() {
-//	var expression string
-//	_, err := fmt.Scanln(&expression)
-//	if err != nil {
-//		fmt.Println("Error:", err)
-//	}
-//	fmt.Println(Calc(expression))
-//}
