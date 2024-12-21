@@ -3,6 +3,7 @@ package application
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/Kripipastt/go-expression-parser/internal/application/handlers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,12 +27,12 @@ func TestCalcHandler(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			b := &bytes.Buffer{}
-			json.NewEncoder(b).Encode(Request{Expression: testCase.expression})
+			json.NewEncoder(b).Encode(handlers.Request{Expression: testCase.expression})
 			request := httptest.NewRequest(http.MethodGet, "http://localhost/calc", b)
-			CalcHandler(w, request)
+			handlers.CalcHandler(w, request)
 			result := w.Result()
 			defer result.Body.Close()
-			data := Response{}
+			data := handlers.Response{}
 			json.NewDecoder(result.Body).Decode(&data)
 			if data.Result != testCase.expected || result.StatusCode != http.StatusOK {
 				t.Errorf("wrong result! Expected: %f, status: %d, got %f, status: %d", testCase.expected, http.StatusOK, data.Result, result.StatusCode)
@@ -55,9 +56,9 @@ func TestCalcHandlerBadRequest(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			b := &bytes.Buffer{}
-			json.NewEncoder(b).Encode(Request{Expression: testCase.expression})
+			json.NewEncoder(b).Encode(handlers.Request{Expression: testCase.expression})
 			request := httptest.NewRequest(http.MethodGet, "http://localhost/calc", b)
-			CalcHandler(w, request)
+			handlers.CalcHandler(w, request)
 			result := w.Result()
 			if result.StatusCode != http.StatusUnprocessableEntity {
 				t.Errorf("wrong result! Expeted status: %d, status: %d", http.StatusUnprocessableEntity, result.StatusCode)

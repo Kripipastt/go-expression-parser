@@ -2,10 +2,14 @@ package application
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
+	"github.com/Kripipastt/go-expression-parser/internal/application/handlers"
+	logger2 "github.com/Kripipastt/go-expression-parser/pkg/logger"
+	"github.com/Kripipastt/go-expression-parser/pkg/logger/middleware"
 	"github.com/Kripipastt/go-expression-parser/pkg/parser"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"strings"
@@ -27,44 +31,11 @@ func LoadConfig() *Config {
 
 type Application struct {
 	config *Config
+	logger *zap.Logger
 }
 
 func New() *Application {
-	return &Application{config: LoadConfig()}
-}
-
-type Request struct {
-	Expression string `json:"expression"`
-}
-
-type Response struct {
-	Result float64 `json:"result"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
-func CalcHandler(w http.ResponseWriter, r *http.Request) {
-	var request = Request{}
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Internal server error"})
-		return
-	}
-
-	defer r.Body.Close()
-
-	result, err := parser.Calc(request.Expression)
-
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(ErrorResponse{Error: "Expression is not valid"})
-		return
-	}
-
-	json.NewEncoder(w).Encode(Response{Result: result})
+	return &Application{config: LoadConfig(), logger: logger2.LoggerCreate()}
 }
 
 func (app *Application) Execute(expression string) (float64, error) {
@@ -96,7 +67,14 @@ func (app *Application) Run() error {
 }
 
 func (app *Application) RunServer() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/calculate", CalcHandler)
-	http.ListenAndServe(":"+app.config.Port, mux)
+	router := mux.NewRouter()
+	router.Use(middleware.LoggingMiddleware(app.logger))
+
+	router.HandleFunc("/api/v1/calculate", handlers.CalcHandler)
+	router.HandleFunc("/ping", handlers.PingHandler)
+
+	http.Handle("/", router)
+
+	app.logger.Info("Run server on port " + app.config.Port)
+	http.ListenAndServe(":"+app.config.Port, router)
 }
