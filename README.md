@@ -10,17 +10,19 @@
 
 ## Способы запуска
 
+- #### Склонировать проект `git clone https://github.com/Kripipastt/go-expression-parser`
+
 1. ### Docker
 
 - #### Необходимо установить [docker](https://www.docker.com/products/docker-desktop/)
 - #### Перейти в директорию проекта
-- #### Ввести команду `docker compose up --build`
+- #### Сбилдить контейнер `docker compose up --build`
 
 2. ### Go
-
 - #### Необходимо установить [golang](https://go.dev/dl/)
 - #### Перейти в директорию проекта
-- #### Ввести команду `go run cmd/main.go`
+- #### Скачать нужные пакеты `go mod download`
+- #### Запустить сервер `go run cmd/main.go`
 
 ## Эндпоинты
 
