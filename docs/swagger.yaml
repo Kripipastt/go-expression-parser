@@ -1,0 +1,68 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handlers.Request:
+    properties:
+      expression:
+        example: 2 + 2 * 2
+        type: string
+    type: object
+  handlers.Response:
+    properties:
+      result:
+        type: number
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for use expression parser service
+  title: Expression Parser Service
+  version: "0.1"
+paths:
+  /api/v1/calculate:
+    post:
+      consumes:
+      - application/json
+      description: Calculate expression
+      parameters:
+      - description: calc expression
+        in: body
+        name: expression
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Calculate expression
+      tags:
+      - expression
+  /ping:
+    get:
+      description: Ping for healthcheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Ping
+      tags:
+      - Other
+swagger: "2.0"

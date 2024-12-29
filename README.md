@@ -24,6 +24,10 @@
 - #### Скачать нужные пакеты `go mod download`
 - #### Запустить сервер `go run cmd/main.go`
 
+## Swagger
+
+#### После запуска сервера на `http://localhost:8080/swagger/index.html` будет доступен swagger, в котором расписаны все имеющиеся эндпоинты
+
 ## Эндпоинты
 
 ### Get `/ping`

@@ -1,0 +1,105 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for use expression parser service",
+        "title": "Expression Parser Service",
+        "contact": {},
+        "version": "0.1"
+    },
+    "host": "localhost:8080",
+    "paths": {
+        "/api/v1/calculate": {
+            "post": {
+                "description": "Calculate expression",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "expression"
+                ],
+                "summary": "Calculate expression",
+                "parameters": [
+                    {
+                        "description": "calc expression",
+                        "name": "expression",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "description": "Ping for healthcheck",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Other"
+                ],
+                "summary": "Ping",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.Request": {
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "example": "2 + 2 * 2"
+                }
+            }
+        },
+        "handlers.Response": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "number"
+                }
+            }
+        }
+    }
+}

@@ -5,7 +5,8 @@ import (
 )
 
 func main() {
-	app := application.New()
+	app := application.NewApplication()
+	app.MountHandlers()
 	//fmt.Println(app.Execute("2 * 2 / 4 + 3 - 26 + 3 - (5 - 50 * 3 / 10)"))
 	app.RunServer()
 }

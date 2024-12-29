@@ -3,11 +3,25 @@ package application
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/Kripipastt/go-expression-parser/internal/application/handlers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+func ExecuteRequest(req *http.Request, s *Application) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	s.Router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func CheckResponse(t *testing.T, expectedCode, actualCode int, expected, actual interface{}) {
+	if expectedCode != actualCode || expected != actual {
+		t.Errorf("Expected code %d, got %d. Expected body %f, got %f", actualCode, expectedCode, expected, actual)
+	}
+}
 
 func TestCalcHandler(t *testing.T) {
 	var testCases = []struct {
@@ -23,20 +37,20 @@ func TestCalcHandler(t *testing.T) {
 			expected:   -9},
 	}
 
+	app := NewApplication()
+	app.MountHandlers()
+
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
 			b := &bytes.Buffer{}
 			json.NewEncoder(b).Encode(handlers.Request{Expression: testCase.expression})
-			request := httptest.NewRequest(http.MethodGet, "http://localhost/calc", b)
-			handlers.CalcHandler(w, request)
-			result := w.Result()
-			defer result.Body.Close()
+			request := httptest.NewRequest(http.MethodPost, "http://localhost/api/v1/calculate", b)
+
+			response := ExecuteRequest(request, app)
 			data := handlers.Response{}
-			json.NewDecoder(result.Body).Decode(&data)
-			if data.Result != testCase.expected || result.StatusCode != http.StatusOK {
-				t.Errorf("wrong result! Expected: %f, status: %d, got %f, status: %d", testCase.expected, http.StatusOK, data.Result, result.StatusCode)
-			}
+			json.NewDecoder(response.Body).Decode(&data)
+			fmt.Println(data)
+			CheckResponse(t, http.StatusOK, response.Code, testCase.expected, data.Result)
 		})
 	}
 }
@@ -52,17 +66,18 @@ func TestCalcHandlerBadRequest(t *testing.T) {
 			expression: "2 - 2 / (2 - 2)"},
 	}
 
+	app := NewApplication()
+	app.MountHandlers()
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
 			b := &bytes.Buffer{}
 			json.NewEncoder(b).Encode(handlers.Request{Expression: testCase.expression})
-			request := httptest.NewRequest(http.MethodGet, "http://localhost/calc", b)
-			handlers.CalcHandler(w, request)
-			result := w.Result()
-			if result.StatusCode != http.StatusUnprocessableEntity {
-				t.Errorf("wrong result! Expeted status: %d, status: %d", http.StatusUnprocessableEntity, result.StatusCode)
-			}
+			request := httptest.NewRequest(http.MethodPost, "http://localhost/api/v1/calculate", b)
+
+			response := ExecuteRequest(request, app)
+			data := handlers.Response{}
+			json.NewDecoder(response.Body).Decode(&data)
+			CheckResponse(t, http.StatusUnprocessableEntity, response.Code, 0, 0)
 		})
 	}
 }

@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/Kripipastt/go-expression-parser/internal/application/handlers"
-	logger2 "github.com/Kripipastt/go-expression-parser/pkg/logger"
-	"github.com/Kripipastt/go-expression-parser/pkg/logger/middleware"
 	"github.com/Kripipastt/go-expression-parser/pkg/parser"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
-	"go.uber.org/zap"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -30,12 +30,12 @@ func LoadConfig() *Config {
 }
 
 type Application struct {
-	config *Config
-	logger *zap.Logger
+	Router *chi.Mux
+	Config *Config
 }
 
-func New() *Application {
-	return &Application{config: LoadConfig(), logger: logger2.LoggerCreate()}
+func NewApplication() *Application {
+	return &Application{Config: LoadConfig(), Router: chi.NewRouter()}
 }
 
 func (app *Application) Execute(expression string) (float64, error) {
@@ -66,15 +66,27 @@ func (app *Application) Run() error {
 	}
 }
 
+func (app *Application) MountHandlers() {
+	app.Router.Use(middleware.Logger)
+	app.Router.Use(middleware.Recoverer)
+
+	app.Router.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+	app.Router.Get("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./docs/swagger.json")
+	})
+
+	app.Router.Post("/api/v1/calculate", handlers.CalcHandler)
+	app.Router.Get("/ping", handlers.PingHandler)
+}
+
+// RunServer
+// @title           Expression Parser Service
+// @version         0.1
+// @description     API for use expression parser service
+// @host      localhost:8080
 func (app *Application) RunServer() {
-	router := mux.NewRouter()
-	router.Use(middleware.LoggingMiddleware(app.logger))
-
-	router.HandleFunc("/api/v1/calculate", handlers.CalcHandler)
-	router.HandleFunc("/ping", handlers.PingHandler)
-
-	http.Handle("/", router)
-
-	app.logger.Info("Run server on port " + app.config.Port)
-	http.ListenAndServe(":"+app.config.Port, router)
+	log.Println("Run server on port " + app.Config.Port)
+	http.ListenAndServe(":"+app.Config.Port, app.Router)
 }
