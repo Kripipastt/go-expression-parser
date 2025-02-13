@@ -7,6 +7,7 @@ import (
 	"github.com/Kripipastt/go-expression-parser/pkg/parser"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"log"
@@ -67,6 +68,12 @@ func (app *Application) Run() error {
 }
 
 func (app *Application) MountHandlers() {
+	app.Router.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
+	}))
+
 	app.Router.Use(middleware.Logger)
 	app.Router.Use(middleware.Recoverer)
 
