@@ -14,6 +14,7 @@ func TestCalc(t *testing.T) {
 		{"Expression priority", "2+2*2", 6, nil},
 		{"Hard expression", "4+3/2+4*2-5/5", 12.50, nil},
 		{"Parenthesis work", "(2+2)*2", 8, nil},
+		{"Parenthesis work 2", "(2 + 3) * 1 + 1", 6, nil},
 		{"Hard expression with parenthesis", "(3+(2+3)*1+(2+2))/1+(4-3)", 13, nil},
 		{"Check space delete", "3   +(2      + 1 )  ", 6, nil},
 		{"Check division by zero error", "(4-2)/(10*0)", 0, divideByZero},

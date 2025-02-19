@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	maps2 "golang.org/x/exp/maps"
 	"math"
 	"slices"
@@ -143,24 +144,34 @@ func Calc(expression string) (float64, error) {
 				var indexesOperations = findIndexesOfElements(tokens, operations)
 				var unusedTokens []string
 				var unfilteredTokens []string
+				var isWrite = 2
 				currentParenthesis = 0
 				for key, value := range tokens {
-					if slices.Contains(indexesOperations, key) && !strings.Contains("()", tokens[key-1]) && !strings.Contains("()", tokens[key+1]) && currentParenthesis == maxParenthesis {
-						var newInd = "@" + strconv.Itoa(len(stack))
-						unusedTokens = append(unusedTokens, newInd)
-						stack[newInd] = tokens[key-1] + value + tokens[key+1]
-						unfilteredTokens = append(unusedTokens, tokens[key+2:]...)
-						break
-					} else if !(slices.Contains(indexesOperations, key+1) && !strings.Contains("()", value) && currentParenthesis == maxParenthesis) {
-
-						if value == "(" {
-							currentParenthesis += 1
-						} else if value == ")" {
-							currentParenthesis -= 1
+					if isWrite == 2 {
+						if slices.Contains(indexesOperations, key) && !strings.Contains("()", tokens[key-1]) && !strings.Contains("()", tokens[key+1]) && currentParenthesis == maxParenthesis {
+							var newInd = "@" + strconv.Itoa(len(stack))
+							unusedTokens = append(unusedTokens, newInd)
+							if key+2 < len(tokens) {
+								unusedTokens = append(unusedTokens, tokens[key+2])
+							}
+							stack[newInd] = tokens[key-1] + value + tokens[key+1]
+							isWrite = 0
+							//unfilteredTokens = append(unusedTokens, tokens[key+2:]...)
+							//break
+						} else if !(slices.Contains(indexesOperations, key+1) && !strings.Contains("()", value) && currentParenthesis == maxParenthesis) {
+							unusedTokens = append(unusedTokens, value)
 						}
-						unusedTokens = append(unusedTokens, value)
+					} else {
+						isWrite++
+					}
+					if value == "(" {
+						currentParenthesis += 1
+					} else if value == ")" {
+						currentParenthesis -= 1
 					}
 				}
+				fmt.Println(operations)
+				fmt.Println(unusedTokens)
 
 				var stringOfTokens = strings.Join(unfilteredTokens, "")
 				if len(unfilteredTokens) == 0 {
