@@ -166,9 +166,16 @@ func Calc(expression string) (float64, error) {
 				var unfilteredTokens []string
 				var isWrite = 2
 				currentParenthesis = 0
+				var blockOperations = ""
+				if slices.Equal(operations, []string{"+"}) {
+					blockOperations = "/*^"
+				} else if slices.Equal(operations, []string{"*", "/"}) {
+					blockOperations = "^"
+				}
 				for key, value := range tokens {
 					if isWrite == 2 {
-						if slices.Contains(indexesOperations, key) && !strings.Contains("()", tokens[key-1]) && !strings.Contains("()", tokens[key+1]) && currentParenthesis == maxParenthesis {
+						if slices.Contains(indexesOperations, key) && !strings.Contains("()", tokens[key-1]) && !strings.Contains("()", tokens[key+1]) && (key+2 == len(tokens) || !strings.Contains("("+blockOperations, tokens[key+2])) && (key-2 < 0 || !strings.Contains(")"+blockOperations, tokens[key-2])) {
+							//fmt.Println(key, value)
 							var newInd = "@" + strconv.Itoa(len(stack))
 							unusedTokens = append(unusedTokens, newInd)
 							if key+2 < len(tokens) {
@@ -178,7 +185,7 @@ func Calc(expression string) (float64, error) {
 							isWrite = 0
 							//unfilteredTokens = append(unusedTokens, tokens[key+2:]...)
 							//break
-						} else if !(slices.Contains(indexesOperations, key+1) && !strings.Contains("()", value) && currentParenthesis == maxParenthesis) {
+						} else if !(slices.Contains(indexesOperations, key+1) && !strings.Contains("()", value) && (key+2 >= len(tokens) || !strings.Contains("("+blockOperations, tokens[key+2])) && (key+3 >= len(tokens) || !strings.Contains("("+blockOperations, tokens[key+3])) && (key-1 < 0 || !strings.Contains(")"+blockOperations, tokens[key-1]))) {
 							unusedTokens = append(unusedTokens, value)
 						}
 					} else {
