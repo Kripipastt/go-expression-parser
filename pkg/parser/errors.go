@@ -10,4 +10,5 @@ var (
 	severalOperations    = errors.New("several operations in a row")
 	emptyExpression      = errors.New("empty expression")
 	incorrectExpression  = errors.New("incorrect expression")
+	incorrectFractional  = errors.New("incorrect fractional numbers")
 )

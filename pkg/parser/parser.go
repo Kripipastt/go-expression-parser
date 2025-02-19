@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	maps2 "golang.org/x/exp/maps"
 	"math"
 	"slices"
@@ -10,9 +9,9 @@ import (
 )
 
 const (
-	ALLOWEDCHAR       = "0123456789+-*/^()"
-	OPERATIONS        = "+-/*^"
-	EXTENDEDOPERATION = "+-/*^()"
+	ALLOWEDCHAR       = "0123456789+-*/^()."
+	OPERATIONS        = "+/*^"
+	EXTENDEDOPERATION = "+/*^()"
 )
 
 func deleteSpecificElement[T comparable](array []T, deletedElement T) []T {
@@ -52,7 +51,12 @@ func recursiveStackCounting(stack map[string]string, countedValues map[string]fl
 	for i, index := range indexes {
 		if strings.Contains(index, "@") {
 			if !slices.Contains(maps2.Keys(countedValues), index) {
-				countedValues[index], err = recursiveStackCounting(stack, countedValues, index)
+				if string(index[0]) == "-" {
+					countedValues[index], err = recursiveStackCounting(stack, countedValues, index[1:])
+					countedValues[index] = -countedValues[index]
+				} else {
+					countedValues[index], err = recursiveStackCounting(stack, countedValues, index)
+				}
 			}
 			values[i] = countedValues[index]
 		} else {
@@ -62,8 +66,6 @@ func recursiveStackCounting(stack map[string]string, countedValues map[string]fl
 	switch expressionSplit[1] {
 	case "+":
 		return values[0] + values[1], err
-	case "-":
-		return values[0] - values[1], err
 	case "*":
 		return values[0] * values[1], err
 	case "/":
@@ -83,7 +85,7 @@ func checkCorrectExpression(expression string) error {
 	if len(expression) == 0 {
 		return emptyExpression
 	}
-	if strings.Contains(OPERATIONS, string(expression[0])) || strings.Contains(OPERATIONS, string(expression[len(expression)-1])) {
+	if (strings.Contains(OPERATIONS, string(expression[0])) && !strings.Contains("-", string(expression[0]))) || strings.Contains(OPERATIONS, string(expression[len(expression)-1])) {
 		return incorrectExpression
 	}
 	var previousElementIsOperation = false
@@ -112,18 +114,36 @@ func splitStringIntoTokens(str, tokens string) []string {
 }
 
 func Calc(expression string) (float64, error) {
+	// Отчищаем выражения от лишних пробнлов
 	expression = strings.Join(deleteSpecificElement(strings.Split(expression, ""), " "), "")
+
+	// Проверяем на корректность
 	err := checkCorrectExpression(expression)
 	if err != nil {
 		return 0, err
 	}
 
+	// Заменяет все - на +- для более удобных вычислений
+	expression = strings.Replace(expression, "--", "", -1)
+	expression = strings.Replace(expression, "-", "+-", -1)
+	expression = strings.Replace(expression, "(+-", "(-", -1)
+	if string(expression[0]) == "+" {
+		expression = expression[1:]
+	}
+
 	var stack = map[string]string{}
 	var tokens = deleteSpecificElement(splitStringIntoTokens(expression, EXTENDEDOPERATION), "")
+
+	for _, token := range tokens {
+		if strings.Count(token, ".") > 1 {
+			return 0, incorrectFractional
+		}
+	}
+
 	//fmt.Println(tokens)
 	for {
 		//fmt.Println(tokens)
-		for _, operations := range [][]string{{"^"}, {"*", "/"}, {"+", "-"}} {
+		for _, operations := range [][]string{{"^"}, {"*", "/"}, {"+"}} {
 			for {
 				var maxParenthesis, currentParenthesis = 0, 0
 				for _, token := range tokens {
@@ -170,8 +190,8 @@ func Calc(expression string) (float64, error) {
 						currentParenthesis -= 1
 					}
 				}
-				fmt.Println(operations)
-				fmt.Println(unusedTokens)
+				//fmt.Println(operations)
+				//fmt.Println(unusedTokens)
 
 				var stringOfTokens = strings.Join(unfilteredTokens, "")
 				if len(unfilteredTokens) == 0 {
@@ -198,13 +218,14 @@ func Calc(expression string) (float64, error) {
 					}
 					stringOfTokens = formattedString
 				}
+				stringOfTokens = strings.Replace(stringOfTokens, "--", "", -1)
 				var filteredTokens = deleteSpecificElement(splitStringIntoTokens(stringOfTokens, EXTENDEDOPERATION), "")
 
 				if len(tokens) == len(filteredTokens) {
 					break
 				}
 				tokens = filteredTokens
-				if !slices.Equal(filteredTokens, unfilteredTokens) && slices.Equal(operations, []string{"+", "-"}) {
+				if !slices.Equal(filteredTokens, unfilteredTokens) && slices.Equal(operations, []string{"+"}) {
 					break
 				}
 			}

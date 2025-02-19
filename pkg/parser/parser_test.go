@@ -23,8 +23,11 @@ func TestCalc(t *testing.T) {
 		{"Many parenthesis", "(((4))+3)", 7, nil},
 		{"Empty expression", "", 0, emptyExpression},
 		{"Incorrect expression", "*2+3", 0, incorrectExpression},
-		{"Check pow", "(2 +2)^2", 16, nil}}
-
+		{"Check pow", "(2 +2)^2", 16, nil},
+		{"Check unary minus sign", "- 2 + 3 - (-4)", 5, nil},
+		{"Stupid parenthesis", "-((2 + (2))) + 2 + 2", 0, nil},
+		{"Fractional numbers", "(0.5 + 9^0.5) / 3.5", 1, nil},
+	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			result, err := Calc(testCase.expression)
