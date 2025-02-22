@@ -1,15 +1,36 @@
 version: "3.8"
 
+x-orchestrator-variables: &orchestrator-variables
+  PORT: 8080
+  TIME_ADDITION_MS: 1000
+  TIME_SUBTRACTION_MS: 1000
+  TIME_MULTIPLICATION_MS: 3000
+  TIME_DIVISION_MS: 3000
+  TIME_EXPONENTIATION_MS: 5000
+
+x-agent_variables: &agent-variables
+  PORT: 8081
+  COMPUTING_POWER: 3
+  ORCHESTRATOR_URL: http://orchestrator:8080
+
 services:
-  parser:
-    build: .
+  orchestrator:
+    build: ./orchestrator
     restart: always
     environment:
-      - PORT=8080
+      <<: *orchestrator-variables
     ports:
       - "8080:8080"
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://localhost/ping" ]
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/ping" ]
       interval: 30s
       timeout: 10s
       retries: 5
+
+  agent:
+    build: ./agent
+    restart: always
+    environment:
+      <<: *agent-variables
+    depends_on:
+      - orchestrator

@@ -1,0 +1,212 @@
+definitions:
+  messages.RequestAddExpression:
+    properties:
+      expression:
+        example: 2 + 2 * 2
+        type: string
+    type: object
+  messages.RequestPostTaskAnswer:
+    properties:
+      id:
+        type: string
+      result:
+        type: number
+    type: object
+  messages.ResponseAllExpression:
+    properties:
+      expressions:
+        items:
+          $ref: '#/definitions/messages.ResponseExpression'
+        type: array
+    type: object
+  messages.ResponseError:
+    properties:
+      error:
+        type: string
+    type: object
+  messages.ResponseExpression:
+    properties:
+      id:
+        type: string
+      result:
+        type: number
+      status:
+        type: string
+    type: object
+  messages.ResponseExpressionId:
+    properties:
+      id:
+        type: string
+    type: object
+  messages.ResponseOneExpression:
+    properties:
+      expression:
+        $ref: '#/definitions/messages.ResponseExpression'
+    type: object
+  messages.ResponseTask:
+    properties:
+      task:
+        $ref: '#/definitions/messages.Task'
+    type: object
+  messages.Task:
+    properties:
+      arg1:
+        type: number
+      arg2:
+        type: number
+      id:
+        type: string
+      operation:
+        type: string
+      operation_time:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for use expression parser service
+  title: Expression Parser Service
+  version: "0.1"
+paths:
+  /api/v1/calculate:
+    post:
+      consumes:
+      - application/json
+      description: Parse and calculate expression
+      parameters:
+      - description: Expression for parse and calc
+        in: body
+        name: expression
+        required: true
+        schema:
+          $ref: '#/definitions/messages.RequestAddExpression'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/messages.ResponseExpressionId'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+      summary: Calculate expression
+      tags:
+      - Expression
+  /api/v1/expressions:
+    get:
+      consumes:
+      - application/json
+      description: Get all expressions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.ResponseAllExpression'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+      summary: Get expressions
+      tags:
+      - Expression
+  /api/v1/expressions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get one expression
+      parameters:
+      - description: Expression id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.ResponseOneExpression'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+      summary: Get one expression
+      tags:
+      - Expression
+  /internal/task:
+    get:
+      consumes:
+      - application/json
+      description: Get task
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/messages.ResponseTask'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+      summary: Get task
+      tags:
+      - Internal
+    post:
+      consumes:
+      - application/json
+      description: Post task result
+      parameters:
+      - description: Answer for task
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/messages.RequestPostTaskAnswer'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/messages.ResponseError'
+      summary: Post task result
+      tags:
+      - Internal
+  /ping:
+    get:
+      description: Ping for healthcheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Ping
+      tags:
+      - Other
+swagger: "2.0"

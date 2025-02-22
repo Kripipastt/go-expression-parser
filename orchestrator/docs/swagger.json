@@ -1,0 +1,326 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for use expression parser service",
+        "title": "Expression Parser Service",
+        "contact": {},
+        "version": "0.1"
+    },
+    "host": "localhost:8080",
+    "paths": {
+        "/api/v1/calculate": {
+            "post": {
+                "description": "Parse and calculate expression",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Expression"
+                ],
+                "summary": "Calculate expression",
+                "parameters": [
+                    {
+                        "description": "Expression for parse and calc",
+                        "name": "expression",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/messages.RequestAddExpression"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseExpressionId"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/expressions": {
+            "get": {
+                "description": "Get all expressions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Expression"
+                ],
+                "summary": "Get expressions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseAllExpression"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/expressions/{id}": {
+            "get": {
+                "description": "Get one expression",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Expression"
+                ],
+                "summary": "Get one expression",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Expression id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseOneExpression"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/task": {
+            "get": {
+                "description": "Get task",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Internal"
+                ],
+                "summary": "Get task",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseTask"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Post task result",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Internal"
+                ],
+                "summary": "Post task result",
+                "parameters": [
+                    {
+                        "description": "Answer for task",
+                        "name": "task",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/messages.RequestPostTaskAnswer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/messages.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "description": "Ping for healthcheck",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Other"
+                ],
+                "summary": "Ping",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "messages.RequestAddExpression": {
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "example": "2 + 2 * 2"
+                }
+            }
+        },
+        "messages.RequestPostTaskAnswer": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "number"
+                }
+            }
+        },
+        "messages.ResponseAllExpression": {
+            "type": "object",
+            "properties": {
+                "expressions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/messages.ResponseExpression"
+                    }
+                }
+            }
+        },
+        "messages.ResponseError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "messages.ResponseExpression": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "messages.ResponseExpressionId": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "messages.ResponseOneExpression": {
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "$ref": "#/definitions/messages.ResponseExpression"
+                }
+            }
+        },
+        "messages.ResponseTask": {
+            "type": "object",
+            "properties": {
+                "task": {
+                    "$ref": "#/definitions/messages.Task"
+                }
+            }
+        },
+        "messages.Task": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "type": "number"
+                },
+                "arg2": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "operation_time": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
