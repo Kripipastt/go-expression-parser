@@ -1,0 +1,42 @@
+.div {
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    width: 90%;
+    height: auto;
+    font-size: 1.5rem;
+    background-color: #c2be1c;
+    border-radius: 10px;
+}
+
+.div[data-status="create"] {
+    color: green;
+    background-color: beige;
+    box-shadow: 3px 3px 5px #7f898e;
+}
+
+.div[data-status="pending"] {
+    background-color: cornflowerblue;
+    box-shadow: 3px 3px 5px #14acf8;
+}
+
+.div[data-status="reject"] {
+    background-color: #d52e4c;
+    box-shadow: 3px 3px 5px darkred;
+}
+
+.div[data-status="finish"] {
+    background-color: lightgreen;
+    box-shadow: 3px 3px 5px #2ddd26;
+}
+
+.div_expression {
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+.div_loader {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 10px;
+    padding-bottom: 10px;
+}

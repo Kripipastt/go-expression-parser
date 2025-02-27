@@ -274,6 +274,9 @@ const docTemplate = `{
         "messages.ResponseExpression": {
             "type": "object",
             "properties": {
+                "expression": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },

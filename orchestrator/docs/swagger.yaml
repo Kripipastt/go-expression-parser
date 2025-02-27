@@ -26,6 +26,8 @@ definitions:
     type: object
   messages.ResponseExpression:
     properties:
+      expression:
+        type: string
       id:
         type: string
       result:

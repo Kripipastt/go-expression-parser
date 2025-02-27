@@ -5,9 +5,10 @@ type ResponseExpressionId struct {
 }
 
 type ResponseExpression struct {
-	Id     string  `json:"id"`
-	Status string  `json:"status"`
-	Result float64 `json:"result"`
+	Id         string  `json:"id"`
+	Status     string  `json:"status"`
+	Result     float64 `json:"result"`
+	Expression string  `json:"expression"`
 }
 
 type ResponseAllExpression struct {

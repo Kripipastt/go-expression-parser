@@ -1,0 +1,9 @@
+.div_head {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.div_input input {
+    width: 70%;
+}

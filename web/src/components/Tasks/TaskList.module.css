@@ -1,0 +1,9 @@
+.div {
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+    border-radius: 10px;
+    border: lightgreen 1px solid;
+
+    overflow-y: auto;
+    max-height: 500px;
+}

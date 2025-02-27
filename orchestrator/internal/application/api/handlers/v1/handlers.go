@@ -62,7 +62,7 @@ func GetExpressionsHandler(w http.ResponseWriter, r *http.Request) {
 	expression := storage.ExStorage.GetAll()
 	formattedExpressions := make([]messages.ResponseExpression, 0)
 	for _, exp := range expression {
-		formattedExpressions = append(formattedExpressions, messages.ResponseExpression{Id: exp.Id, Status: exp.Status, Result: exp.Result})
+		formattedExpressions = append(formattedExpressions, messages.ResponseExpression{Expression: exp.Expression, Id: exp.Id, Status: exp.Status, Result: exp.Result})
 	}
 	response := messages.ResponseAllExpression{
 		Expressions: formattedExpressions,
@@ -97,7 +97,8 @@ func GetOneExpressionHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("ERROR: ", err)
 		return
 	}
-	response := messages.ResponseOneExpression{Expression: messages.ResponseExpression{Id: exp.Id, Status: exp.Status, Result: exp.Result}}
+
+	response := messages.ResponseOneExpression{Expression: messages.ResponseExpression{Expression: exp.Expression, Id: exp.Id, Status: exp.Status, Result: exp.Result}}
 	err = encoder.Encode(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -34,3 +34,9 @@ services:
       <<: *agent-variables
     depends_on:
       - orchestrator
+
+  web:
+    build: ./web
+    restart: always
+    ports:
+      - "80:80"
