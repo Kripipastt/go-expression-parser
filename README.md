@@ -15,7 +15,7 @@
 1. ### Docker
 
 - #### Необходимо установить [docker](https://www.docker.com/products/docker-desktop/)
-- #### Перейти в директорию проекта
+- #### Перейти в директорию проекта `cd go-expression-parser`
 - #### Запустить `docker compose up --build`
 
 [//]: # (2. ### Go)
